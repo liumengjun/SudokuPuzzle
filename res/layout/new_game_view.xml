@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:padding="16sp" >
+	<EditText
+		android:id="@+id/plate_num_input"
+		android:layout_width="fill_parent" 
+	    android:layout_height="wrap_content"
+	    android:text="3"
+	    />
+	<TableLayout 
+		android:layout_width="fill_parent" 
+	    android:layout_height="wrap_content"
+	    android:stretchColumns="0,1">
+	    <TableRow>
+			<Button android:id="@+id/BTN_DISCARD"
+			    android:layout_width="fill_parent" 
+			    android:layout_height="wrap_content"
+				android:text="Discard"/>
+			<Button android:id="@+id/BTN_OK"
+			    android:layout_width="fill_parent" 
+			    android:layout_height="wrap_content"
+				android:text="OK"/>				
+		</TableRow>
+	</TableLayout>								
+</LinearLayout>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hello">Hello World, SudokuPuzzleActivity!</string>
+    <string name="app_name">数独之谜</string>
+	<string name="app_info">
+		Version 1.0\n
+		Author: Scott Lew\n
+		Email:  zhonglijunyi@163.com\n
+		<!-- Please visit http://zhonglijunyi.vicp.net:6202/-->
+    </string>
+</resources>
