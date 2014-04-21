@@ -10,7 +10,6 @@ import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -50,11 +49,9 @@ public class SudokuPuzzleActivity extends Activity
 
 	// 新游戏设定视图中的元素
 	private Dialog mNewPuzzleDlg = null;
-	private EditText mPlateNumInput = null;
+	private EditText mDegreeInput = null;
 	private Button mBtnDiscard = null;
 	private Button mBtnOk = null;
-	private boolean isDoNewPuzzle;
-	private boolean isFreeModel;
 
 	private GridView matrixGridView;
 	private TextView msgTextView;
@@ -64,6 +61,13 @@ public class SudokuPuzzleActivity extends Activity
 	private int selectedPosition = -1;
 	private int currentDegree = SudokuMatrix.DEFAULT_DEGREE;
 	private int hintTimes;
+
+	private boolean isDoNewPuzzle; // 是否做初始化新游戏
+	private boolean isFreeModel; // 是否是自由设定数字模式
+	private boolean isSolving; // 是否正在求解过程中
+
+	private float defaultNumTextSize = 20; // 
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -76,6 +80,10 @@ public class SudokuPuzzleActivity extends Activity
 	@Override
 	public void onWindowFocusChanged(boolean hasFocus) {
 		super.onWindowFocusChanged(hasFocus);
+		// 以这种方式得到数字单元格的默认字体大小
+		if (hasFocus) {
+			defaultNumTextSize = getNumViewAtPos(0).getTextSize();
+		}
 		if (hasFocus && isDoNewPuzzle) {
 			doNewPuzzleSetting();
 			isDoNewPuzzle = false;
@@ -238,14 +246,10 @@ public class SudokuPuzzleActivity extends Activity
 
 	@Override
 	public void onClick(View v) {
-		Button btn = (Button) v;
-		String cmdStr = btn.getText().toString();
-		// 数字命令
-		if (cmdStr.charAt(0) >= '1' && cmdStr.charAt(0) <= '9') {
-			doSetNum(cmdStr);
+		if (isSolving) {// 正在求解过程中，不准打断
 			return;
 		}
-		int btnId = btn.getId();
+		int btnId = v.getId();
 		if (btnId == R.id.button_unset) {
 			doUnset();
 		} else if (btnId == R.id.button_hint) {
@@ -256,6 +260,13 @@ public class SudokuPuzzleActivity extends Activity
 			doNewPuzzle();
 		} else if (btnId == R.id.button_freemodel) {
 			doCustomizeMatrix();
+		}
+		Button btn = (Button) v;
+		String cmdStr = btn.getText().toString();
+		// 数字命令
+		if (cmdStr.charAt(0) >= '1' && cmdStr.charAt(0) <= '9') {
+			doSetNum(cmdStr);
+			return;
 		}
 	}
 
@@ -304,7 +315,7 @@ public class SudokuPuzzleActivity extends Activity
 		// 设定该单元格数字
 		// selectedView.setText(cmdStr);
 		TextView curTextView = (TextView) selectedView.findViewById(R.id.numview);
-		curTextView.setTextScaleX(1);
+		curTextView.setTextSize(defaultNumTextSize);
 		curTextView.setText(cmdStr);
 		curTextView.setBackgroundColor(USER_SOLVED_FIELD_COLOR);
 		sudokuMatrix.setCellValue(cd.x, cd.y, cmdNum);
@@ -344,38 +355,66 @@ public class SudokuPuzzleActivity extends Activity
 	}
 
 	private void doSolve() {
+		isSolving = true;
 		// 把输入框矩阵数字，保存到this.sudokuMatrix
 		initByHandFromView2Matrix();
-		final int sleep = 500;
-		// 开始求解
-		boolean flag = sudokuMatrix.solve(new SolveCallback() {
-			public void iterateCallback(int itrTimes, boolean isAllSolved, boolean hasAchievement) {
-				msgTextView.setText("迭代" + itrTimes + "次");
-				msgTextView.postInvalidate();
-			}
-
-			public void solveCellCallback(int x, int y, int value) {
-				int pos = convCoord2Pos(x, y);
-				TextView tv = getNumViewAtPos(pos);
-				tv.setText("" + value);
-				tv.setBackgroundColor(NEW_SOLVED_FIELD_COLOR);
-				tv.postInvalidate();
-				try {
-					Thread.sleep(sleep);
-				} catch (Exception e) {
-				}
-			}
-
-			public void reduceCellCallback(int x, int y, int value) {
-
-			}
-
-		});
-		if (flag) {
-			msgTextView.setText("求解成功。");
-		} else {
-			msgTextView.setText("求解失败。");
+		if (sudokuMatrix.unsolvedCount() > 69) {
+			msgTextView.setText("你一定在开玩笑，程序拒绝求解。");
+			isSolving = false;
+			return;
 		}
+		final int sleep = 500;
+		if (sudokuMatrix.unsolvedCount() > 50) {
+			msgTextView.setText("你在开玩笑吧，空白处太多了，可能求解失败。");
+			try {
+				Thread.sleep(sleep);
+			} catch (Exception e) {
+			}
+		}
+		// 开始求解
+		msgTextView.setText("正在求解...");
+		new Thread(new Runnable() {
+			public void run() {
+				boolean flag = sudokuMatrix.solve(new SolveCallback() {
+					public void iterateCallback(final int itrTimes, boolean isAllSolved, boolean hasAchievement) {
+						msgTextView.post(new Runnable() {
+							public void run() {
+								msgTextView.setText("迭代" + itrTimes + "次");
+							}
+						});
+					}
+
+					public void solveCellCallback(int x, int y, final int value) {
+						int pos = convCoord2Pos(x, y);
+						final TextView tv = getNumViewAtPos(pos);
+						tv.post(new Runnable() {
+							public void run() {
+								tv.setTextSize(defaultNumTextSize);
+								tv.setText("" + value);
+								tv.setBackgroundColor(NEW_SOLVED_FIELD_COLOR);
+							}
+						});
+						try {
+							Thread.sleep(sleep);
+						} catch (Exception e) {
+						}
+					}
+
+					public void reduceCellCallback(int x, int y, int value) {
+
+					}
+
+				});
+				final String msg = flag ? "求解成功。" : "求解失败。";
+				msgTextView.post(new Runnable() {
+					public void run() {
+						msgTextView.setText(msg);
+					}
+				});
+				isSolving = false;
+			}
+		}).start();
+
 	}
 
 	/**
@@ -414,10 +453,10 @@ public class SudokuPuzzleActivity extends Activity
 		View newGameSettingView = inflater.inflate(R.layout.new_game_view, null);
 		// 必须先填充，再获取其子组件
 		mNewPuzzleDlg.setContentView(newGameSettingView);
-		mNewPuzzleDlg.setTitle("请输入难度级别数:\n(" + SudokuMatrix.MIN_DEGREE + "," + SudokuMatrix.MAX_DEGREE
-				+ ")");
+		mNewPuzzleDlg.setTitle("请输入难度级别数[" + SudokuMatrix.MIN_DEGREE + "," + SudokuMatrix.MAX_DEGREE
+				+ "]：");
 
-		mPlateNumInput = (EditText) newGameSettingView.findViewById(R.id.plate_num_input);
+		mDegreeInput = (EditText) newGameSettingView.findViewById(R.id.degree_input);
 		mBtnDiscard = (Button) newGameSettingView.findViewById(R.id.BTN_DISCARD);
 		mBtnOk = (Button) newGameSettingView.findViewById(R.id.BTN_OK);
 
@@ -430,9 +469,9 @@ public class SudokuPuzzleActivity extends Activity
 					}
 					case R.id.BTN_OK : {
 						// 关闭输入法软键盘，否则初始化GridView会出错
-						InputMethodManager imm = (InputMethodManager) mPlateNumInput.getContext().getSystemService(
+						InputMethodManager imm = (InputMethodManager) mDegreeInput.getContext().getSystemService(
 								Context.INPUT_METHOD_SERVICE);
-						imm.hideSoftInputFromWindow(mPlateNumInput.getWindowToken(), 0);
+						imm.hideSoftInputFromWindow(mDegreeInput.getWindowToken(), 0);
 						mNewPuzzleDlg.dismiss();
 						isDoNewPuzzle = true;
 						break;
@@ -448,35 +487,35 @@ public class SudokuPuzzleActivity extends Activity
 	private void doNewPuzzleSetting() {
 		int degree = 0;
 		try {
-			degree = Integer.parseInt(mPlateNumInput.getText().toString());
+			degree = Integer.parseInt(mDegreeInput.getText().toString());
 		} catch (Exception ex) {
 		}
 		if ((degree < SudokuMatrix.MIN_DEGREE) || (degree > SudokuMatrix.MAX_DEGREE)) {
-			degree = SudokuMatrix.DEFAULT_DEGREE;
+			degree = this.currentDegree;
 		}
+		msgTextView.setText("新游戏，难度级别为" + degree);
 		// 生成谜题
 		this.currentDegree = degree;
 		sudokuMatrix.setDegreeOfPuzzle(degree);
 		int[][] puzzleMatrix = sudokuMatrix.generatePuzzle();
 
-		Log.i("lew.scott.out", "begin initial");
 		final int MATRIX_WIDTH = SudokuMatrix.SQUARE_LENGTH;
 		final int total_length = MATRIX_WIDTH * MATRIX_WIDTH;
 		for (int i = 0; i < total_length; i++) {
 			Map<String, Object> cell = (Map<String, Object>) matrixGridView.getItemAtPosition(i);
 			TextView tv = getNumViewAtPos(i);
 			Coord cd = convPos2Coord(i);
-			Log.i("lew.scott.out", "do cell: " + i + ", i.e. " + cd);
 			int v = puzzleMatrix[cd.x][cd.y];
 			String str = "" + ((v == SudokuMatrix.UNSET_VALUE) ? "" : v);
 			int bgColor = (v == SudokuMatrix.UNSET_VALUE) ? NO_VALUE_FIELD_COLOR : DEFAULT_FIELD_COLOR;
 			cell.put(VIEW_OBJ_VAL_KEY, str);
 			cell.put(VIEW_OBJ_BG_KEY, bgColor);
 			cell.put(VIEW_OBJ_TRY_TIMES_KEY, 0);
+			tv.setTextSize(defaultNumTextSize);
 			tv.setText(str);
 			tv.setBackgroundColor(bgColor);
 		}
-		Log.i("lew.scott.out", "end initial");
+		hintTimes = 0;
 	}
 
 	private void doCustomizeMatrix() {
@@ -526,9 +565,7 @@ public class SudokuPuzzleActivity extends Activity
 			return false;
 		}
 		// 设置
-		TextView curTextView = getNumViewAtPos(position);
-		curTextView.setTextScaleX(0.5f);
-		curTextView.setText(al.toString());
+		setHintNums(getNumViewAtPos(position), al);
 		// 尝试次数增加2
 		increaseTryTimes(position, 2);
 		return true;
@@ -551,9 +588,7 @@ public class SudokuPuzzleActivity extends Activity
 					continue;
 				}
 				int tmpPos = convCoord2Pos(s, t);
-				TextView curTextView = getNumViewAtPos(tmpPos);
-				curTextView.setTextScaleX(0.5f);
-				curTextView.setText(al.toString());
+				setHintNums(getNumViewAtPos(tmpPos), al);
 				// 尝试次数增加2
 				increaseTryTimes(tmpPos, 2);
 				hinted = true;
@@ -576,9 +611,7 @@ public class SudokuPuzzleActivity extends Activity
 				continue;
 			}
 			int tmpPos = convCoord2Pos(cd.x, t);
-			TextView curTextView = getNumViewAtPos(tmpPos);
-			curTextView.setTextScaleX(0.5f);
-			curTextView.setText(al.toString());
+			setHintNums(getNumViewAtPos(tmpPos), al);
 			// 尝试次数增加2
 			increaseTryTimes(tmpPos, 2);
 			hinted = true;
@@ -600,13 +633,20 @@ public class SudokuPuzzleActivity extends Activity
 				continue;
 			}
 			int tmpPos = convCoord2Pos(s, cd.y);
-			TextView curTextView = getNumViewAtPos(tmpPos);
-			curTextView.setTextScaleX(0.5f);
-			curTextView.setText(al.toString());
+			setHintNums(getNumViewAtPos(tmpPos), al);
 			// 尝试次数增加2
 			increaseTryTimes(tmpPos, 2);
 			hinted = true;
 		}
 		return hinted;
+	}
+
+	private void setHintNums(TextView tv, ArrayList<Integer> al) {
+		tv.setTextSize(defaultNumTextSize / 2);
+		StringBuffer hint = new StringBuffer();
+		for (int i = 0; i < al.size(); i++) {
+			hint.append(al.get(i)).append(' ');
+		}
+		tv.setText(hint);
 	}
 }
