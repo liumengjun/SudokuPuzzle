@@ -184,11 +184,12 @@ public class SudokuMatrix {
 	 */
 	public int[][] generatePuzzle() {
 		this.validMatrix = this.generateValidMatrix();
-		Random rand = new Random();
+//		Random rand = new Random();
 		for (int i = 0; i < matrix.length; i++) {
 			for (int k = 0; k < degreeOfPuzzle; k++) {
-				rand.setSeed(System.nanoTime());
-				int iRnd = rand.nextInt(SQUARE_LENGTH);
+//				rand.setSeed(System.nanoTime());
+//				int iRnd = rand.nextInt(SQUARE_LENGTH);
+				int iRnd = (int)(Math.random()*SQUARE_LENGTH);
 				matrix[i][iRnd] = UNSET_VALUE;
 			}
 		}

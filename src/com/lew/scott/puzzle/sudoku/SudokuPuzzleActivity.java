@@ -472,6 +472,10 @@ public class SudokuPuzzleActivity extends Activity
 						InputMethodManager imm = (InputMethodManager) mDegreeInput.getContext().getSystemService(
 								Context.INPUT_METHOD_SERVICE);
 						imm.hideSoftInputFromWindow(mDegreeInput.getWindowToken(), 0);
+						try {
+							Thread.sleep(200);
+						} catch (Exception e) {
+						}
 						mNewPuzzleDlg.dismiss();
 						isDoNewPuzzle = true;
 						break;
