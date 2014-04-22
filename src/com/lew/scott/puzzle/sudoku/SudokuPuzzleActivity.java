@@ -11,6 +11,9 @@ import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.animation.AlphaAnimation;
@@ -89,6 +92,18 @@ public class SudokuPuzzleActivity extends Activity
 			isDoNewPuzzle = false;
 			isFreeModel = false;
 		}
+	}
+
+	/**
+	 * 创建options菜单
+	 */
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// 充实菜单
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.options_menu, menu);
+		// 注意：必须要调用超类的方法，否则无法实现意图回调
+		return (super.onCreateOptionsMenu(menu));
 	}
 
 	// 初始化对话框
@@ -268,6 +283,26 @@ public class SudokuPuzzleActivity extends Activity
 			doSetNum(cmdStr);
 			return;
 		}
+	}
+
+	/**
+	 * options菜单相应函数
+	 */
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+
+		switch (item.getItemId()) {
+			case R.id.about : {
+				doAbout();
+				break;
+			}
+			case R.id.exit : {
+				this.finish();
+				break;
+			}
+		}
+
+		return (super.onOptionsItemSelected(item));
 	}
 
 	/**
@@ -522,6 +557,21 @@ public class SudokuPuzzleActivity extends Activity
 		hintTimes = 0;
 	}
 
+	private void doAbout() {
+		final Dialog aboutDlg = new Dialog(this);
+		LayoutInflater inflater = aboutDlg.getLayoutInflater();
+		View aboutView = inflater.inflate(R.layout.about_view, null);
+		aboutDlg.setContentView(aboutView);
+		aboutDlg.setTitle("关于数独之谜");
+
+		aboutView.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				aboutDlg.dismiss();
+			}
+		});
+		aboutDlg.show();
+	}
+
 	private void doCustomizeMatrix() {
 		for (int i = 0; i < SudokuMatrix.SQUARE_LENGTH; i++) {
 			for (int j = 0; j < SudokuMatrix.SQUARE_LENGTH; j++) {
@@ -535,6 +585,7 @@ public class SudokuPuzzleActivity extends Activity
 			}
 		}
 		isFreeModel = true;
+		msgTextView.setText("自由设定单元格内的数字，可用程序求解。");
 	}
 
 	// 得到position位置的数字视图

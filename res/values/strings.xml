@@ -3,6 +3,7 @@
     <string name="hello">Hello World, SudokuPuzzleActivity!</string>
     <string name="app_name">数独之谜</string>
 	<string name="app_info">
+		&#160;&#160;数独之谜，解密数独。\n\n
 		Version 1.0\n
 		Author: Scott Lew\n
 		Email:  zhonglijunyi@163.com\n
