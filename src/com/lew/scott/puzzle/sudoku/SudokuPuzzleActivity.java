@@ -697,6 +697,9 @@ public class SudokuPuzzleActivity extends Activity
 	}
 
 	private void setHintNums(TextView tv, ArrayList<Integer> al) {
+		if (tv.getText().length()>0) {
+			return;
+		}
 		tv.setTextSize(defaultNumTextSize / 2);
 		StringBuffer hint = new StringBuffer();
 		for (int i = 0; i < al.size(); i++) {
