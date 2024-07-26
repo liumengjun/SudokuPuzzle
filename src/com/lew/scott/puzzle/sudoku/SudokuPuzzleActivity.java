@@ -10,6 +10,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -44,6 +45,8 @@ public class SudokuPuzzleActivity extends Activity
 	private static final int CONFLICT_FIELD_COLOR = Color.YELLOW;
 	private static final int NEW_SOLVED_FIELD_COLOR = Color.GREEN;
 	private static final int USER_SOLVED_FIELD_COLOR = Color.LTGRAY;
+	public static final int FAKE_BIG_GRID_BORDER_COLOR = Color.rgb(200, 100, 0);
+	public static final int FAKE_GRID_BORDER_COLOR = Color.rgb(68, 68, 68);
 	public static final String VIEW_OBJ_VAL_KEY = "numview";
 	public static final String VIEW_OBJ_BG_KEY = "bgcolor";
 	public static final String VIEW_OBJ_TRY_TIMES_KEY = "trytimes";
@@ -69,7 +72,8 @@ public class SudokuPuzzleActivity extends Activity
 	private boolean isFreeModel; // 是否是自由设定数字模式
 	private boolean isSolving; // 是否正在求解过程中
 
-	private float defaultNumTextSize = 20; // 
+	private float defaultNumTextSize = 20; //
+	private boolean gotDefaultNumTextSize = false; //
 
 	/** Called when the activity is first created. */
 	@Override
@@ -84,8 +88,17 @@ public class SudokuPuzzleActivity extends Activity
 	public void onWindowFocusChanged(boolean hasFocus) {
 		super.onWindowFocusChanged(hasFocus);
 		// 以这种方式得到数字单元格的默认字体大小
-		if (hasFocus) {
-			defaultNumTextSize = getNumViewAtPos(0).getTextSize();
+		if (hasFocus && !gotDefaultNumTextSize) {
+			// 使用代码设置TextView需要转换px和sp的, getTextSize返回值是以像素(px)为单位的，而setTextSize()是以sp为单位的。
+			// 现在setTextSize()可以指定单位，旧代码没有单位问题
+			TextView tv = this.getNumViewAtPos(0);
+			float fontScale = getResources().getDisplayMetrics().scaledDensity;
+			defaultNumTextSize = tv.getTextSize() / fontScale;
+			gotDefaultNumTextSize = true;
+			Log.i("NumTextSize", "got defaultNumTextSize: " + defaultNumTextSize);
+			Log.i("NumTextSize", "got getTextSize: " + tv.getTextSize());
+//			Log.i("NumTextSize", "got getScaledTextSize: "+ tv.getScaledTextSize());
+			Log.i("NumTextSize", "got DisplayMetrics: " + getResources().getDisplayMetrics());
 		}
 		if (hasFocus && isDoNewPuzzle) {
 			doNewPuzzleSetting();
@@ -201,7 +214,7 @@ public class SudokuPuzzleActivity extends Activity
 			// Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(selectedPosition);
 			// int oldcolor = (Integer) itemObj.get(VIEW_OBJ_BG_KEY);
 			// selectedView.setBackgroundColor(oldcolor);
-			selectedView.setBackgroundColor(Color.TRANSPARENT);
+			selectedView.setBackgroundColor(FAKE_GRID_BORDER_COLOR);
 		}
 		// 设置选中背景颜色
 		selectedPosition = position;
@@ -339,7 +352,7 @@ public class SudokuPuzzleActivity extends Activity
 				public void onAnimationRepeat(Animation animation) {
 				}
 				public void onAnimationEnd(Animation animation) {
-					ccView.setBackgroundColor(Color.TRANSPARENT);
+					ccView.setBackgroundColor(FAKE_GRID_BORDER_COLOR);
 				}
 			});
 			anim.setDuration(100);

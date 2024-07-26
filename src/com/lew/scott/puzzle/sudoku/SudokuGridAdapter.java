@@ -28,12 +28,14 @@ public class SudokuGridAdapter extends SimpleAdapter {
 		// 调整边框
 		Coord cd = SudokuPuzzleActivity.convPos2Coord(position);
 		int x = cd.x, y = cd.y;
-		int thick = 2, thin = 0;
-		int top = (x % SudokuMatrix.SQUARE_ROOT == 0) ? thick : thin;
-		int left = (y % SudokuMatrix.SQUARE_ROOT == 0) ? thick : thin;
-		int bottom = (x % SudokuMatrix.SQUARE_ROOT == (SudokuMatrix.SQUARE_ROOT - 1)) ? thick : thin;
-		int right = (y % SudokuMatrix.SQUARE_ROOT == (SudokuMatrix.SQUARE_ROOT - 1)) ? thick : thin;
+		int thick = 3, thin = 0, bigGridLast = SudokuMatrix.SQUARE_ROOT - 1, last = SudokuMatrix.SQUARE_LENGTH - 1;
+		int top = x == 0 ? 2 * thick : ((x % SudokuMatrix.SQUARE_ROOT == 0) ? thick : thin);
+		int left = y == 0 ? 2 * thick : ((y % SudokuMatrix.SQUARE_ROOT == 0) ? thick : thin);
+		int bottom = x == last ? 2 * thick : ((x % SudokuMatrix.SQUARE_ROOT == bigGridLast) ? thick : thin);
+		int right = y == last ? 2 * thick : ((y % SudokuMatrix.SQUARE_ROOT == bigGridLast) ? thick : thin);
 		v.setPadding(left, top, right, bottom);
+		v.setBackgroundColor(SudokuPuzzleActivity.FAKE_BIG_GRID_BORDER_COLOR);
+		v.findViewById(R.id.borderview).setBackgroundColor(SudokuPuzzleActivity.FAKE_GRID_BORDER_COLOR);
 		// 设置背景色
 		Map<String, Object> item = (Map<String, Object>) mData.get(position);
 		Object bgColor = item.get(SudokuPuzzleActivity.VIEW_OBJ_BG_KEY);
