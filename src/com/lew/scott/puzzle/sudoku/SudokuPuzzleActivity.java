@@ -51,6 +51,7 @@ public class SudokuPuzzleActivity extends Activity
 	public static final String VIEW_OBJ_VAL_KEY = "numview";
 	public static final String VIEW_OBJ_BG_KEY = "bgcolor";
 	public static final String VIEW_OBJ_TRY_TIMES_KEY = "trytimes";
+	public static final String NO_VALUE_TEXT = "";
 
 	private static final int NEW_PUZZLE_DLG = 1;
 
@@ -143,7 +144,7 @@ public class SudokuPuzzleActivity extends Activity
 			Map<String, Object> cell = new HashMap<String, Object>();
 			Coord cd = convPos2Coord(i);
 			int v = puzzleMatrix[cd.x][cd.y];
-			String str = "" + ((v == SudokuMatrix.UNSET_VALUE) ? "" : v);
+			String str = "" + ((v == SudokuMatrix.UNSET_VALUE) ? NO_VALUE_TEXT : v);
 			cell.put(VIEW_OBJ_VAL_KEY, str);
 			int bgColor = (v == SudokuMatrix.UNSET_VALUE) ? NO_VALUE_FIELD_COLOR : DEFAULT_FIELD_COLOR;
 			cell.put(VIEW_OBJ_BG_KEY, bgColor);
@@ -368,6 +369,10 @@ public class SudokuPuzzleActivity extends Activity
 		curTextView.setTextSize(defaultNumTextSize);
 		curTextView.setText(cmdStr);
 		curTextView.setBackgroundColor(USER_SOLVED_FIELD_COLOR);
+		// 同时设置 matrixGridView item 值
+		Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(selectedPosition);
+		itemObj.put(VIEW_OBJ_VAL_KEY, cmdStr);
+		itemObj.put(VIEW_OBJ_BG_KEY, USER_SOLVED_FIELD_COLOR);
 		sudokuMatrix.setCellValue(cd.x, cd.y, cmdNum);
 		if (isFreeModel) {
 			return;
@@ -400,8 +405,12 @@ public class SudokuPuzzleActivity extends Activity
 		sudokuMatrix.unsetCellValue(cd.x, cd.y);
 		cell.unset();
 		TextView curTextView = getNumViewAtPos(selectedPosition);
-		curTextView.setText("");
+		curTextView.setText(NO_VALUE_TEXT);
 		curTextView.setBackgroundColor(NO_VALUE_FIELD_COLOR);
+		// 同时清空 matrixGridView item 值
+		Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(selectedPosition);
+		itemObj.put(VIEW_OBJ_VAL_KEY, NO_VALUE_TEXT);
+		itemObj.put(VIEW_OBJ_BG_KEY, NO_VALUE_FIELD_COLOR);
 	}
 
 	private void doSolve() {
@@ -435,13 +444,17 @@ public class SudokuPuzzleActivity extends Activity
 					}
 
 					public void solveCellCallback(int x, int y, final int value) {
-						int pos = convCoord2Pos(x, y);
+						final int pos = convCoord2Pos(x, y);
 						final TextView tv = getNumViewAtPos(pos);
 						tv.post(new Runnable() {
 							public void run() {
 								tv.setTextSize(defaultNumTextSize);
 								tv.setText("" + value);
 								tv.setBackgroundColor(NEW_SOLVED_FIELD_COLOR);
+								// 同时设置 matrixGridView item 值
+								Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(pos);
+								itemObj.put(VIEW_OBJ_VAL_KEY, "" + value);
+								itemObj.put(VIEW_OBJ_BG_KEY, NEW_SOLVED_FIELD_COLOR);
 							}
 						});
 						try {
@@ -484,7 +497,7 @@ public class SudokuPuzzleActivity extends Activity
 				} catch (Exception ex) {
 				}
 				// 设定单元格(i,j)值失败
-				tv.setText("");
+				tv.setText(NO_VALUE_TEXT);
 				tv.setBackgroundColor(NO_VALUE_FIELD_COLOR);
 				sudokuMatrix.unsetCellValue(i, j);
 			}
@@ -560,7 +573,7 @@ public class SudokuPuzzleActivity extends Activity
 			TextView tv = getNumViewAtPos(i);
 			Coord cd = convPos2Coord(i);
 			int v = puzzleMatrix[cd.x][cd.y];
-			String str = "" + ((v == SudokuMatrix.UNSET_VALUE) ? "" : v);
+			String str = "" + ((v == SudokuMatrix.UNSET_VALUE) ? NO_VALUE_TEXT : v);
 			int bgColor = (v == SudokuMatrix.UNSET_VALUE) ? NO_VALUE_FIELD_COLOR : DEFAULT_FIELD_COLOR;
 			cell.put(VIEW_OBJ_VAL_KEY, str);
 			cell.put(VIEW_OBJ_BG_KEY, bgColor);
@@ -593,8 +606,12 @@ public class SudokuPuzzleActivity extends Activity
 				int pos = convCoord2Pos(i, j);
 				TextView tv = getNumViewAtPos(pos);
 				// 清空单元格(i,j)值
-				tv.setText("");
+				tv.setText(NO_VALUE_TEXT);
 				tv.setBackgroundColor(NO_VALUE_FIELD_COLOR);
+				// 同时清空 matrixGridView item 值
+				Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(pos);
+				itemObj.put(VIEW_OBJ_VAL_KEY, NO_VALUE_TEXT);
+				itemObj.put(VIEW_OBJ_BG_KEY, NO_VALUE_FIELD_COLOR);
 				sudokuMatrix.unsetCellValue(i, j);
 				sudokuMatrix.getCell(i, j).unset();
 			}
@@ -635,7 +652,7 @@ public class SudokuPuzzleActivity extends Activity
 			return false;
 		}
 		// 设置
-		setHintNums(getNumViewAtPos(position), al);
+		setHintNums(getNumViewAtPos(position), al, position);
 		// 尝试次数增加2
 		increaseTryTimes(position, 2);
 		return true;
@@ -658,7 +675,7 @@ public class SudokuPuzzleActivity extends Activity
 					continue;
 				}
 				int tmpPos = convCoord2Pos(s, t);
-				setHintNums(getNumViewAtPos(tmpPos), al);
+				setHintNums(getNumViewAtPos(tmpPos), al, tmpPos);
 				// 尝试次数增加2
 				increaseTryTimes(tmpPos, 2);
 				hinted = true;
@@ -681,7 +698,7 @@ public class SudokuPuzzleActivity extends Activity
 				continue;
 			}
 			int tmpPos = convCoord2Pos(cd.x, t);
-			setHintNums(getNumViewAtPos(tmpPos), al);
+			setHintNums(getNumViewAtPos(tmpPos), al, tmpPos);
 			// 尝试次数增加2
 			increaseTryTimes(tmpPos, 2);
 			hinted = true;
@@ -703,7 +720,7 @@ public class SudokuPuzzleActivity extends Activity
 				continue;
 			}
 			int tmpPos = convCoord2Pos(s, cd.y);
-			setHintNums(getNumViewAtPos(tmpPos), al);
+			setHintNums(getNumViewAtPos(tmpPos), al, tmpPos);
 			// 尝试次数增加2
 			increaseTryTimes(tmpPos, 2);
 			hinted = true;
@@ -711,7 +728,7 @@ public class SudokuPuzzleActivity extends Activity
 		return hinted;
 	}
 
-	private void setHintNums(TextView tv, ArrayList<Integer> al) {
+	private void setHintNums(TextView tv, ArrayList<Integer> al, int pos) {
 		if (tv.getText().length()>0) {
 			return;
 		}
@@ -721,5 +738,8 @@ public class SudokuPuzzleActivity extends Activity
 			hint.append(al.get(i)).append(' ');
 		}
 		tv.setText(hint);
+		// 同时设置 matrixGridView item 值
+		Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(pos);
+		itemObj.put(VIEW_OBJ_VAL_KEY, hint);
 	}
 }
