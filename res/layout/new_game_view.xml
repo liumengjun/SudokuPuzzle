@@ -19,7 +19,7 @@
 			<Button android:id="@+id/BTN_DISCARD"
 			    android:layout_width="fill_parent" 
 			    android:layout_height="wrap_content"
-				android:text="Discard"/>
+				android:text="取消"/>
 			<Button android:id="@+id/BTN_OK"
 			    android:layout_width="fill_parent" 
 			    android:layout_height="wrap_content"
