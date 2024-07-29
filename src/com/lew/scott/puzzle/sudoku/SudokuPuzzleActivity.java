@@ -9,6 +9,8 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Color;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -77,6 +79,15 @@ public class SudokuPuzzleActivity extends Activity
 	private float defaultNumTextSize = 20; //
 	private boolean gotDefaultNumTextSize = false; //
 
+	private SoundPool soundPool;
+	private int soundSelect;
+	private int soundSelectBad;
+	private int soundConflict;
+	private int soundFirstOk;
+	private int soundHint;
+	private int soundOk;
+	private int soundAllOk;
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -85,6 +96,18 @@ public class SudokuPuzzleActivity extends Activity
 		setContentView(R.layout.main);
 		initGrid();
 		initButtons();
+		initSound();
+	}
+
+	private void initSound() {
+		soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC, 0);
+		soundSelect = soundPool.load(this, R.raw.sound_tock, 1);
+		soundSelectBad = soundPool.load(this, R.raw.sound_jiueng, 1);
+		soundConflict = soundPool.load(this, R.raw.sound_conflict, 1);
+		soundFirstOk = soundPool.load(this, R.raw.sound_first_ok, 1);
+		soundHint = soundPool.load(this, R.raw.sound_hint, 1);
+		soundOk = soundPool.load(this, R.raw.sound_drip, 1);
+		soundAllOk = soundPool.load(this, R.raw.sound_ding, 1);
 	}
 
 	@Override
@@ -207,23 +230,27 @@ public class SudokuPuzzleActivity extends Activity
 	}
 
 	private void doSelectItem(AdapterView<?> parent, View view, int position, long id) {
+		Log.d("doSelectItem", "new view: " + view + ", old selectedView: " + this.selectedView);
 		if (selectedView == view) {
+			soundPool.play(soundSelect,1,1,1,0,1);
+			return;
+		}
+		Coord cd = convPos2Coord(position);
+		if (sudokuMatrix.isCellSolved(cd.x, cd.y)) {
+			soundPool.play(soundSelectBad,1,1,1,0,1);
 			return;
 		}
 		hintTimes = 0;
 
 		// 恢复上个选中cell的背景
 		if (selectedView != null) {
-			// Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(selectedPosition);
-			// int oldcolor = (Integer) itemObj.get(VIEW_OBJ_BG_KEY);
-			// selectedView.setBackgroundColor(oldcolor);
-			selectedView.setBackgroundColor(FAKE_GRID_BORDER_COLOR);
+			selectedView.findViewById(R.id.borderview).setBackgroundColor(FAKE_GRID_BORDER_COLOR);
 		}
 		// 设置选中背景颜色
 		selectedPosition = position;
-		selectedView = view.findViewById(R.id.borderview);
-		// selectedView = (TextView) view.findViewById(R.id.numview);
-		selectedView.setBackgroundColor(SELECTED_FIELD_COLOR);
+		selectedView = view;
+		selectedView.findViewById(R.id.borderview).setBackgroundColor(SELECTED_FIELD_COLOR);
+		soundPool.play(soundSelect,1,1,1,0,1);
 	}
 
 	@Override
@@ -236,11 +263,13 @@ public class SudokuPuzzleActivity extends Activity
 	private void doHint(int position) {
 		if (position == -1) {
 			msgTextView.setText("请选择一个单元格");
+			soundPool.play(soundSelectBad,1,1,1,0,1);
 			return;
 		}
 		Coord cd = convPos2Coord(position);
 		if (sudokuMatrix.isCellSolved(cd.x, cd.y)) {
 			msgTextView.setText("请选择另一个单元格");
+			soundPool.play(soundSelectBad,1,1,1,0,1);
 			return;
 		}
 		if (hintTimes == 0) {
@@ -251,11 +280,13 @@ public class SudokuPuzzleActivity extends Activity
 			hintRow(position);
 			hintColumn(position);
 		} else {
-			msgTextView.setText("贪得无厌的家伙！。");
+			msgTextView.setText("提示信息已经够多了！");
+			soundPool.play(soundSelectBad,1,1,1,0,1);
 			return;
 		}
 		msgTextView.setText("提示信息");
 		hintTimes++;
+		soundPool.play(soundHint,1,1,1,0,1);
 	}
 
 	// 把位置转换为坐标
@@ -329,11 +360,13 @@ public class SudokuPuzzleActivity extends Activity
 	private void doSetNum(String cmdStr) {
 		if (selectedView == null || selectedPosition == -1) {
 			msgTextView.setText("请选择一个单元格");
+			soundPool.play(soundSelectBad,1,1,1,0,1);
 			return;
 		}
 		Coord cd = convPos2Coord(selectedPosition);
 		if (sudokuMatrix.isCellSolved(cd.x, cd.y)) {
 			msgTextView.setText("请选择另一个单元格");
+			soundPool.play(soundSelectBad,1,1,1,0,1);
 			return;
 		}
 
@@ -361,10 +394,10 @@ public class SudokuPuzzleActivity extends Activity
 			anim.setDuration(100);
 			anim.setRepeatCount(1);
 			ccView.startAnimation(anim);
+			soundPool.play(soundConflict,1,1,1,0,1);
 			return;
 		}
 		// 设定该单元格数字
-		// selectedView.setText(cmdStr);
 		TextView curTextView = (TextView) selectedView.findViewById(R.id.numview);
 		curTextView.setTextSize(defaultNumTextSize);
 		curTextView.setText(cmdStr);
@@ -382,11 +415,14 @@ public class SudokuPuzzleActivity extends Activity
 		if (cmdNum == answer[cd.x][cd.y] && tryTimes == 1) {
 			msgTextView.setText("你真聪明, 一次就填对了。");
 			// msgTextView.setText("嗯，对了。");
+			soundPool.play(soundFirstOk,1,1,1,0,1);
 		} else {
 			msgTextView.setText("请继续。");
+			soundPool.play(soundOk,1,1,1,0,1);
 		}
 		if (!sudokuMatrix.hasUnsolvedCell()) {
 			msgTextView.setText("你真聪明,全部解决了！");
+			soundPool.play(soundAllOk,1,1,1,0,1);
 		}
 	}
 
@@ -401,6 +437,7 @@ public class SudokuPuzzleActivity extends Activity
 			msgTextView.setText("请选择另一个单元格");
 			return;
 		}
+		hintTimes--;
 
 		sudokuMatrix.unsetCellValue(cd.x, cd.y);
 		cell.unset();
