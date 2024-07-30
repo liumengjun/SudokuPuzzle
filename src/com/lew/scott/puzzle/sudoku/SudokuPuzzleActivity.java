@@ -87,6 +87,7 @@ public class SudokuPuzzleActivity extends Activity
 	private int soundHint;
 	private int soundOk;
 	private int soundAllOk;
+	private int soundZing;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -108,6 +109,7 @@ public class SudokuPuzzleActivity extends Activity
 		soundHint = soundPool.load(this, R.raw.sound_hint, 1);
 		soundOk = soundPool.load(this, R.raw.sound_drip, 1);
 		soundAllOk = soundPool.load(this, R.raw.sound_ding, 1);
+		soundZing = soundPool.load(this, R.raw.sound_zing, 1);
 	}
 
 	@Override
@@ -230,13 +232,14 @@ public class SudokuPuzzleActivity extends Activity
 	}
 
 	private void doSelectItem(AdapterView<?> parent, View view, int position, long id) {
-		Log.d("doSelectItem", "new view: " + view + ", old selectedView: " + this.selectedView);
+//		Log.d("doSelectItem", "new view: " + view + ", old selectedView: " + this.selectedView);
 		if (selectedView == view) {
 			soundPool.play(soundSelect,1,1,1,0,1);
 			return;
 		}
-		Coord cd = convPos2Coord(position);
-		if (sudokuMatrix.isCellSolved(cd.x, cd.y)) {
+		Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(position);
+		int textBgColor = (int) itemObj.get(VIEW_OBJ_BG_KEY);
+		if (textBgColor == DEFAULT_FIELD_COLOR) {
 			soundPool.play(soundSelectBad,1,1,1,0,1);
 			return;
 		}
@@ -364,7 +367,9 @@ public class SudokuPuzzleActivity extends Activity
 			return;
 		}
 		Coord cd = convPos2Coord(selectedPosition);
-		if (sudokuMatrix.isCellSolved(cd.x, cd.y)) {
+		Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(selectedPosition);
+		int textBgColor = (int) itemObj.get(VIEW_OBJ_BG_KEY);
+		if (textBgColor == DEFAULT_FIELD_COLOR) {
 			msgTextView.setText("请选择另一个单元格");
 			soundPool.play(soundSelectBad,1,1,1,0,1);
 			return;
@@ -403,7 +408,6 @@ public class SudokuPuzzleActivity extends Activity
 		curTextView.setText(cmdStr);
 		curTextView.setBackgroundColor(USER_SOLVED_FIELD_COLOR);
 		// 同时设置 matrixGridView item 值
-		Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(selectedPosition);
 		itemObj.put(VIEW_OBJ_VAL_KEY, cmdStr);
 		itemObj.put(VIEW_OBJ_BG_KEY, USER_SOLVED_FIELD_COLOR);
 		sudokuMatrix.setCellValue(cd.x, cd.y, cmdNum);
@@ -414,7 +418,6 @@ public class SudokuPuzzleActivity extends Activity
 		// sudokuMatrix.setCellSolved(cd.x, cd.y);
 		if (cmdNum == answer[cd.x][cd.y] && tryTimes == 1) {
 			msgTextView.setText("你真聪明, 一次就填对了。");
-			// msgTextView.setText("嗯，对了。");
 			soundPool.play(soundFirstOk,1,1,1,0,1);
 		} else {
 			msgTextView.setText("请继续。");
@@ -422,7 +425,7 @@ public class SudokuPuzzleActivity extends Activity
 		}
 		if (!sudokuMatrix.hasUnsolvedCell()) {
 			msgTextView.setText("你真聪明,全部解决了！");
-			soundPool.play(soundAllOk,1,1,1,0,1);
+			soundPool.play(soundAllOk,1,1,7,1,1.25f);
 		}
 	}
 
@@ -433,11 +436,13 @@ public class SudokuPuzzleActivity extends Activity
 		}
 		Coord cd = convPos2Coord(selectedPosition);
 		Cell cell = sudokuMatrix.getCell(cd.x, cd.y);
-		if (cell.isPreset()) {
+		Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(selectedPosition);
+		int textBgColor = (int) itemObj.get(VIEW_OBJ_BG_KEY);
+		if (textBgColor == DEFAULT_FIELD_COLOR) {
 			msgTextView.setText("请选择另一个单元格");
 			return;
 		}
-		hintTimes--;
+		hintTimes = 0;
 
 		sudokuMatrix.unsetCellValue(cd.x, cd.y);
 		cell.unset();
@@ -445,7 +450,6 @@ public class SudokuPuzzleActivity extends Activity
 		curTextView.setText(NO_VALUE_TEXT);
 		curTextView.setBackgroundColor(NO_VALUE_FIELD_COLOR);
 		// 同时清空 matrixGridView item 值
-		Map<String, Object> itemObj = (Map<String, Object>) matrixGridView.getItemAtPosition(selectedPosition);
 		itemObj.put(VIEW_OBJ_VAL_KEY, NO_VALUE_TEXT);
 		itemObj.put(VIEW_OBJ_BG_KEY, NO_VALUE_FIELD_COLOR);
 	}
@@ -511,6 +515,11 @@ public class SudokuPuzzleActivity extends Activity
 						msgTextView.setText(msg);
 					}
 				});
+				if (flag) {
+					soundPool.play(soundAllOk, 1, 1, 7, 1, 1.25f);
+				} else {
+					soundPool.play(soundZing, 1, 1, 7, 0, 0.5f);
+				}
 				isSolving = false;
 			}
 		}).start();
@@ -528,7 +537,7 @@ public class SudokuPuzzleActivity extends Activity
 				try {
 					int v = Integer.parseInt(tv.getText().toString());
 					if (sudokuMatrix.setCellValue(i, j, v)) {// 尝试给(i,j)设定坐标值
-						tv.setBackgroundColor(DEFAULT_FIELD_COLOR);
+//						tv.setBackgroundColor(DEFAULT_FIELD_COLOR);
 						continue;
 					}
 				} catch (Exception ex) {
