@@ -107,6 +107,13 @@
 			android:text="提示"
 			android:textSize="8pt" />
 		<Button
+			android:id="@+id/button_notes"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_weight="2"
+			android:text="小记"
+			android:textSize="8pt" />
+		<Button
 			android:id="@+id/button_unset"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"

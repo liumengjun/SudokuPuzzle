@@ -9,6 +9,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Bundle;
@@ -89,6 +90,10 @@ public class SudokuPuzzleActivity extends Activity
 	private int soundAllOk;
 	private int soundZing;
 
+	private boolean isOnlyTakeNotesMode = false;
+	private Drawable btnDefaultBackground = null;
+	private Button mBtnNotes = null;
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -113,6 +118,11 @@ public class SudokuPuzzleActivity extends Activity
 	}
 
 	@Override
+	public void onBackPressed() {
+		moveTaskToBack(true);
+	}
+
+	@Override
 	public void onWindowFocusChanged(boolean hasFocus) {
 		super.onWindowFocusChanged(hasFocus);
 		// 以这种方式得到数字单元格的默认字体大小
@@ -127,6 +137,9 @@ public class SudokuPuzzleActivity extends Activity
 			Log.i("NumTextSize", "got getTextSize: " + tv.getTextSize());
 //			Log.i("NumTextSize", "got getScaledTextSize: "+ tv.getScaledTextSize());
 			Log.i("NumTextSize", "got DisplayMetrics: " + getResources().getDisplayMetrics());
+		}
+		if (hasFocus && btnDefaultBackground == null) {
+			btnDefaultBackground = findViewById(R.id.button_notes).getBackground();
 		}
 		if (hasFocus && isDoNewPuzzle) {
 			doNewPuzzleSetting();
@@ -214,6 +227,8 @@ public class SudokuPuzzleActivity extends Activity
 		btn = (Button) findViewById(R.id.button_newpuzzle);
 		btn.setOnClickListener(this);
 		btn = (Button) findViewById(R.id.button_freemodel);
+		btn.setOnClickListener(this);
+		btn = mBtnNotes = (Button) findViewById(R.id.button_notes);
 		btn.setOnClickListener(this);
 	}
 
@@ -322,9 +337,11 @@ public class SudokuPuzzleActivity extends Activity
 		} else if (btnId == R.id.button_solve) {
 			doSolve();
 		} else if (btnId == R.id.button_newpuzzle) {
-			doNewPuzzle();
+			showNewPuzzleDialog();
 		} else if (btnId == R.id.button_freemodel) {
 			doCustomizeMatrix();
+		} else if (btnId == R.id.button_notes) {
+			setOnlyTakeNotesMode((Button)v, false);
 		}
 		Button btn = (Button) v;
 		String cmdStr = btn.getText().toString();
@@ -332,6 +349,17 @@ public class SudokuPuzzleActivity extends Activity
 		if (cmdStr.charAt(0) >= '1' && cmdStr.charAt(0) <= '9') {
 			doSetNum(cmdStr);
 			return;
+		}
+	}
+
+	private void setOnlyTakeNotesMode(Button btn, boolean clear) {
+		this.isOnlyTakeNotesMode = !clear && !this.isOnlyTakeNotesMode;
+		if (this.isOnlyTakeNotesMode) {
+//			btn.setBackgroundDrawable(Drawable.createFromPath("@android:@drawable/btn_default_pressed"));
+			btn.setBackgroundResource(R.drawable.btn_default_pressed); // android.jar包拿来的资源
+		} else {
+//			btn.setBackgroundResource(android.R.drawable.btn_default);
+			btn.setBackgroundDrawable(btnDefaultBackground);
 		}
 	}
 
@@ -404,12 +432,25 @@ public class SudokuPuzzleActivity extends Activity
 		}
 		// 设定该单元格数字
 		TextView curTextView = (TextView) selectedView.findViewById(R.id.numview);
-		curTextView.setTextSize(defaultNumTextSize);
+		if (isOnlyTakeNotesMode) {
+			// 小记模式
+			String existsNotes = curTextView.getText().toString().trim();
+			if (!existsNotes.contains(cmdStr)) {
+				cmdStr = existsNotes.isEmpty() ? cmdStr : existsNotes + " " + cmdStr;
+				cmdStr += " ";
+			} else {
+				cmdStr = existsNotes + " ";
+			}
+		}
+		curTextView.setTextSize(defaultNumTextSize * (isOnlyTakeNotesMode ? 0.5f : 1));
 		curTextView.setText(cmdStr);
 		curTextView.setBackgroundColor(USER_SOLVED_FIELD_COLOR);
 		// 同时设置 matrixGridView item 值
 		itemObj.put(VIEW_OBJ_VAL_KEY, cmdStr);
 		itemObj.put(VIEW_OBJ_BG_KEY, USER_SOLVED_FIELD_COLOR);
+		if (isOnlyTakeNotesMode) {
+			return;
+		}
 		sudokuMatrix.setCellValue(cd.x, cd.y, cmdNum);
 		if (isFreeModel) {
 			return;
@@ -550,7 +591,7 @@ public class SudokuPuzzleActivity extends Activity
 		}
 	}
 
-	private void doNewPuzzle() {
+	private void showNewPuzzleDialog() {
 		showDialog(NEW_PUZZLE_DLG);
 	}
 
@@ -663,6 +704,7 @@ public class SudokuPuzzleActivity extends Activity
 			}
 		}
 		isFreeModel = true;
+		setOnlyTakeNotesMode(mBtnNotes, true);
 		msgTextView.setText("自由设定单元格内的数字，可用程序求解。");
 	}
 
