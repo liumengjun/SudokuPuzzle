@@ -449,6 +449,7 @@ public class SudokuPuzzleActivity extends Activity
 		itemObj.put(VIEW_OBJ_VAL_KEY, cmdStr);
 		itemObj.put(VIEW_OBJ_BG_KEY, USER_SOLVED_FIELD_COLOR);
 		if (isOnlyTakeNotesMode) {
+			sudokuMatrix.unsetCellValue(cd.x, cd.y);
 			return;
 		}
 		sudokuMatrix.setCellValue(cd.x, cd.y, cmdNum);

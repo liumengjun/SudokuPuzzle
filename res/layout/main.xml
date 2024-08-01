@@ -100,13 +100,6 @@
 			android:text="新谜题"
 			android:textSize="8pt" />
 		<Button
-			android:id="@+id/button_hint"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_weight="2"
-			android:text="提示"
-			android:textSize="8pt" />
-		<Button
 			android:id="@+id/button_notes"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
@@ -119,6 +112,13 @@
 			android:layout_height="wrap_content"
 			android:layout_weight="2"
 			android:text="清除"
+			android:textSize="8pt" />
+		<Button
+			android:id="@+id/button_hint"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_weight="2"
+			android:text="提示"
 			android:textSize="8pt" />
 		<Button
 			android:id="@+id/button_freemodel"

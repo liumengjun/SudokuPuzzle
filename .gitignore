@@ -28,6 +28,8 @@ proguard/
 *.iws
 .idea/
 
+default.properties
 *.apk.cache/
 .gradle
 build/
+release/
