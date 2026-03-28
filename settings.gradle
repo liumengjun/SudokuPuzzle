@@ -16,4 +16,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "SudokuPuzzle"
-//gradle.gradleVersion 8.2.1, with plugin 8.2.0
+//gradle.gradleVersion 8.2.1, with android plugin 8.2.0
